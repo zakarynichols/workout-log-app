@@ -11,9 +11,13 @@ import (
 	"github.com/rs/cors"
 )
 
+// Make conn a package-level variable so yourHandler can access it
+var conn *pgx.Conn
+
 func main() {
 	ctx := context.Background()
-	conn, err := pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
+	var err error
+	conn, err = pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
@@ -27,34 +31,42 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println(greeting)
-
 	fmt.Println("Query result:", greeting)
 
 	mux := http.NewServeMux()
 
-	// Your routes here
+	// Register handler
 	mux.HandleFunc("/", yourHandler)
 
 	// Setup CORS options
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://167.172.234.41:3000"}, // adjust origins as needed
+		AllowedOrigins: []string{"http://167.172.234.41:3000"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders: []string{"Content-Type", "Authorization"},
 	})
 
 	handler := c.Handler(mux)
 
+	fmt.Println("Server running on :8080")
 	http.ListenAndServe(":8080", handler)
 }
 
 func yourHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+
+	// Query the database for a message
+	var message string
+	err := conn.QueryRow(ctx, "SELECT 'Hello from DB!'").Scan(&message)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("DB query error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	// Set JSON content type
 	w.Header().Set("Content-Type", "application/json")
 
-	// Sample response data
 	response := map[string]string{
-		"message": "Hello from backend!",
+		"message": message,
 	}
 
 	// Encode response as JSON and write it
