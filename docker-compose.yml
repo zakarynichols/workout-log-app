@@ -27,11 +27,17 @@ services:
       db:
         condition: service_healthy
 
+  services:
   frontend:
     build:
       context: ./frontend
+      args:
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL}
     ports:
       - "3000:80"
+    environment:
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+
 
 volumes:
   postgres-data:

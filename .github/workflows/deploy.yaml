@@ -19,39 +19,40 @@ jobs:
           ssh-private-key: ${{ secrets.DIGITALOCEAN_SSH_KEY }}
 
       - name: Deploy to droplet via SSH
+        env:
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} << 'EOF'
-          set -e
-          echo "Checking app directory..."
+          ssh -o StrictHostKeyChecking=no ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} << EOF
+            set -e
+            echo "Checking app directory..."
 
-          if [ -d ~/workout-log-app ]; then
-            cd ~/workout-log-app
-            if [ ! -d .git ]; then
-              echo "Directory exists but not a git repo, removing and cloning fresh..."
-              cd ~
-              rm -rf workout-log-app
+            if [ -d ~/workout-log-app ]; then
+              cd ~/workout-log-app
+              if [ ! -d .git ]; then
+                echo "Directory exists but not a git repo, removing and cloning fresh..."
+                cd ~
+                rm -rf workout-log-app
+                git clone https://github.com/zakarynichols/workout-log-app.git workout-log-app
+                cd workout-log-app
+              else
+                echo "Git repo found, pulling latest changes..."
+                git pull origin master
+              fi
+            else
+              echo "Directory doesn't exist, cloning repo..."
               git clone https://github.com/zakarynichols/workout-log-app.git workout-log-app
               cd workout-log-app
-            else
-              echo "Git repo found, pulling latest changes..."
-              git pull origin master
             fi
-          else
-            echo "Directory doesn't exist, cloning repo..."
-            git clone https://github.com/zakarynichols/workout-log-app.git workout-log-app
-            cd workout-log-app
-          fi
 
-          echo "Stopping containers..."
-          docker compose down
+            echo "Stopping containers..."
+            docker compose down
 
-          echo "Building containers..."
-          docker build --build-arg VITE_BACKEND_URL=${{ secrets.VITE_BACKEND_URL }} -t workout-log-app-frontend ./frontend
+            echo "Building containers with VITE_BACKEND_URL=$VITE_BACKEND_URL ..."
+            VITE_BACKEND_URL=$VITE_BACKEND_URL docker compose build
 
-          echo "Starting containers..."
-          docker compose up -d
+            echo "Starting containers..."
+            docker compose up -d
 
-          echo "Deployment complete. Containers status:"
-          docker compose ps
+            echo "Deployment complete. Containers status:"
+            docker compose ps
           EOF
-
