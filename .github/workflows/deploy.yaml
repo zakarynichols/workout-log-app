@@ -20,7 +20,7 @@ jobs:
 
       - name: Deploy to droplet via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no dev-01@your.droplet.ip.address << 'EOF'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} << 'EOF'
             set -e
             cd ~/workout-log-app || git clone https://github.com/zakarynichols/workout-log-app.git ~/workout-log-app && cd ~/workout-log-app
             git pull origin master
