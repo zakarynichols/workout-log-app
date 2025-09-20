@@ -1,0 +1,30 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DIGITALOCEAN_SSH_KEY }}
+
+      - name: Deploy to droplet via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no dev-01@your.droplet.ip.address << 'EOF'
+            set -e
+            cd ~/workout-log-app || git clone https://github.com/zakarynichols/workout-log-app.git ~/workout-log-app && cd ~/workout-log-app
+            git pull origin master
+            docker compose down
+            docker compose build
+            docker compose up -d
+          EOF
