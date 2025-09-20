@@ -46,7 +46,7 @@ jobs:
           docker compose down
 
           echo "Building containers..."
-          docker compose build
+          docker build --build-arg VITE_BACKEND_URL=${{ secrets.VITE_BACKEND_URL }} -t workout-log-app-frontend ./frontend
 
           echo "Starting containers..."
           docker compose up -d
