@@ -1,4 +1,4 @@
-name: Deploy to DigitalOcean v1
+name: Deploy to DigitalOcean
 
 on:
   push:
@@ -18,11 +18,16 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.DIGITALOCEAN_SSH_KEY }}
 
+      - name: Add Droplet to known_hosts (pin host key)
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KNOWN_HOST }}" >> ~/.ssh/known_hosts
+
       - name: Deploy to droplet via SSH
         env:
           VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} << EOF
+          ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} << EOF
             set -e
             echo "Checking app directory..."
 
