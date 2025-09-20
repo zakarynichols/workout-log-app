@@ -15,9 +15,8 @@ function App() {
       })
   }, []);
 
-
   return (
-    <div>Workout log app
+    <div>
       <p>Server response: {response}</p>
     </div>
   )
