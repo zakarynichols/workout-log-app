@@ -1,63 +1,37 @@
-name: Deploy to DigitalOcean
+- name: Deploy to droplet via SSH
+  env:
+    VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+  run: |
+    ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} << EOF
+      set -e
 
-on:
-  push:
-    branches:
-      - master
+      echo "Checking app directory..."
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+      if [ -d ~/workout-log-app ]; then
+        cd ~/workout-log-app
+        if [ ! -d .git ]; then
+          echo "Directory exists but not a git repo, removing and cloning fresh..."
+          cd ~
+          rm -rf workout-log-app
+          git clone https://github.com/zakarynichols/workout-log-app.git workout-log-app
+          cd workout-log-app
+        else
+          echo "Git repo found, pulling latest changes..."
+          git pull origin master
+        fi
+      else
+        echo "Directory doesn't exist, cloning repo..."
+        git clone https://github.com/zakarynichols/workout-log-app.git workout-log-app
+        cd workout-log-app
+      fi
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      echo "Stopping containers..."
+      docker compose down
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.DIGITALOCEAN_SSH_KEY }}
+      echo "Building and starting containers..."
+      VITE_BACKEND_URL=$VITE_BACKEND_URL docker compose up -d --build
 
-      - name: Add Droplet to known_hosts (pin host key)
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KNOWN_HOST }}" >> ~/.ssh/known_hosts
+      echo "Deployment complete. Containers status:"
+      docker compose ps
 
-      - name: Deploy to droplet via SSH
-        env:
-          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
-        run: |
-          ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} << EOF
-            set -e
-            echo "Checking app directory..."
-
-            if [ -d ~/workout-log-app ]; then
-              cd ~/workout-log-app
-              if [ ! -d .git ]; then
-                echo "Directory exists but not a git repo, removing and cloning fresh..."
-                cd ~
-                rm -rf workout-log-app
-                git clone https://github.com/zakarynichols/workout-log-app.git workout-log-app
-                cd workout-log-app
-              else
-                echo "Git repo found, pulling latest changes..."
-                git pull origin master
-              fi
-            else
-              echo "Directory doesn't exist, cloning repo..."
-              git clone https://github.com/zakarynichols/workout-log-app.git workout-log-app
-              cd workout-log-app
-            fi
-
-            echo "Stopping containers..."
-            docker compose down
-
-            echo "Building containers with VITE_BACKEND_URL=$VITE_BACKEND_URL ..."
-            VITE_BACKEND_URL=$VITE_BACKEND_URL docker compose build
-
-            echo "Starting containers..."
-            docker compose up -d
-
-            echo "Deployment complete. Containers status:"
-            docker compose ps
-          EOF
+    EOF
