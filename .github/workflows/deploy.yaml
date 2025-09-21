@@ -1,4 +1,3 @@
----
 - name: Deploy to droplet via SSH
   env:
     VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
