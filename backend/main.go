@@ -11,12 +11,14 @@ import (
 	"github.com/rs/cors"
 )
 
-// Make conn a package-level variable so yourHandler can access it
+// Package-level DB connection
 var conn *pgx.Conn
 
 func main() {
 	ctx := context.Background()
 	var err error
+
+	// Connect to DB
 	conn, err = pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
@@ -24,21 +26,19 @@ func main() {
 	}
 	defer conn.Close(ctx)
 
+	// Test query on startup
 	var greeting string
 	err = conn.QueryRow(ctx, "select 'Hello, world!'").Scan(&greeting)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
 		os.Exit(1)
 	}
-
 	fmt.Println("Query result:", greeting)
 
 	mux := http.NewServeMux()
-
-	// Register handler
 	mux.HandleFunc("/", yourHandler)
 
-	// Setup CORS options
+	// Setup CORS
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"http://167.172.234.41:3000"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -48,30 +48,39 @@ func main() {
 	handler := c.Handler(mux)
 
 	fmt.Println("Server running on :8080")
-	http.ListenAndServe(":8080", handler)
+	if err := http.ListenAndServe(":8080", handler); err != nil {
+		fmt.Fprintf(os.Stderr, "Server error: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func yourHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	// Query the database for a message
+	// Log incoming request
+	fmt.Printf("Incoming request from %s %s %s\n", r.RemoteAddr, r.Method, r.URL.Path)
+
+	// Query DB for message
 	var message string
 	err := conn.QueryRow(ctx, "SELECT 'Hello from DB!'").Scan(&message)
 	if err != nil {
+		fmt.Printf("DB query error for %s: %v\n", r.RemoteAddr, err)
 		http.Error(w, fmt.Sprintf("DB query error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Set JSON content type
+	// Write JSON response
 	w.Header().Set("Content-Type", "application/json")
-
 	response := map[string]string{
 		"message": message,
 	}
 
-	// Encode response as JSON and write it
 	if err := json.NewEncoder(w).Encode(response); err != nil {
+		fmt.Printf("Response encoding error for %s: %v\n", r.RemoteAddr, err)
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 		return
 	}
+
+	// Log successful response
+	fmt.Printf("Responded successfully to %s\n", r.RemoteAddr)
 }
