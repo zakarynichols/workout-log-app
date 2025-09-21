@@ -1,37 +1,48 @@
-- name: Deploy to droplet via SSH
-  env:
-    VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
-  run: >
-    ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} << EOF
-      set -e
+name: Deploy to DigitalOcean
 
-      echo "Checking app directory..."
+on:
+  push:
+    branches:
+      - master
 
-      if [ -d ~/workout-log-app ]; then
-        cd ~/workout-log-app
-        if [ ! -d .git ]; then
-          echo "Directory exists but not a git repo, removing and cloning fresh..."
-          cd ~
-          rm -rf workout-log-app
-          git clone https://github.com/zakarynichols/workout-log-app.git workout-log-app
-          cd workout-log-app
-        else
-          echo "Git repo found, pulling latest changes..."
-          git pull origin master
-        fi
-      else
-        echo "Directory doesn't exist, cloning repo..."
-        git clone https://github.com/zakarynichols/workout-log-app.git workout-log-app
-        cd workout-log-app
-      fi
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to droplet via SSH
+        env:
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+        run: |
+          ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} << EOF
+            set -e
 
-      echo "Stopping containers..."
-      docker compose down
+            echo "Checking app directory..."
 
-      echo "Building and starting containers..."
-      VITE_BACKEND_URL=$VITE_BACKEND_URL docker compose up -d --build
+            if [ -d ~/workout-log-app ]; then
+              cd ~/workout-log-app
+              if [ ! -d .git ]; then
+                echo "Directory exists but not a git repo, removing and cloning fresh..."
+                cd ~
+                rm -rf workout-log-app
+                git clone https://github.com/zakarynichols/workout-log-app.git workout-log-app
+                cd workout-log-app
+              else
+                echo "Git repo found, pulling latest changes..."
+                git pull origin master
+              fi
+            else
+              echo "Directory doesn't exist, cloning repo..."
+              git clone https://github.com/zakarynichols/workout-log-app.git workout-log-app
+              cd workout-log-app
+            fi
 
-      echo "Deployment complete. Containers status:"
-      docker compose ps
+            echo "Stopping containers..."
+            docker compose down
 
-    EOF
+            echo "Building and starting containers..."
+            VITE_BACKEND_URL=$VITE_BACKEND_URL docker compose up -d --build
+
+            echo "Deployment complete. Containers status:"
+            docker compose ps
+
+          EOF
