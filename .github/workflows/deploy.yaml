@@ -1,7 +1,8 @@
+---
 - name: Deploy to droplet via SSH
   env:
     VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
-  run: |
+  run: >
     ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} << EOF
       set -e
 
