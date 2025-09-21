@@ -8,14 +8,27 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DIGITALOCEAN_SSH_KEY }}
+
+      - name: Add Droplet to known_hosts (pin host key)
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KNOWN_HOST }}" >> ~/.ssh/known_hosts
+
       - name: Deploy to droplet via SSH
         env:
           VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
         run: |
           ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} << EOF
             set -e
-
             echo "Checking app directory..."
 
             if [ -d ~/workout-log-app ]; then
@@ -39,10 +52,12 @@ jobs:
             echo "Stopping containers..."
             docker compose down
 
-            echo "Building and starting containers..."
-            VITE_BACKEND_URL=$VITE_BACKEND_URL docker compose up -d --build
+            echo "Building containers with VITE_BACKEND_URL=$VITE_BACKEND_URL ..."
+            VITE_BACKEND_URL=$VITE_BACKEND_URL docker compose build
+
+            echo "Starting containers..."
+            docker compose up -d
 
             echo "Deployment complete. Containers status:"
             docker compose ps
-
           EOF
