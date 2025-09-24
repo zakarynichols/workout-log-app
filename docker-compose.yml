@@ -43,8 +43,8 @@ services:
 
   migrate:
     image: migrate/migrate
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
+    env_file:
+      - .env
     volumes:
       - ./migrations:/migrations
     command: [
