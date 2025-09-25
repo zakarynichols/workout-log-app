@@ -3,7 +3,7 @@
 # Build stage
 FROM golang:1.25-alpine AS builder
 
-# Install git (if you need to fetch modules) and build dependencies
+# Install git (needed for some Go modules)
 RUN apk add --no-cache git
 
 WORKDIR /app
@@ -16,7 +16,7 @@ RUN go mod download
 COPY . .
 
 # Build optimized binary (disable CGO, static linking, smaller binary)
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o main .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o server ./cmd/server
 
 # Final stage: minimal image
 FROM alpine:latest
@@ -27,10 +27,10 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 # Copy binary from build stage
-COPY --from=builder /app/main .
+COPY --from=builder /app/server .
 
 # Expose port (optional here, useful for documentation)
 EXPOSE 8080
 
 # Run the binary
-CMD ["./main"]
+CMD ["./server"]
