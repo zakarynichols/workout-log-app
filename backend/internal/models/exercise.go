@@ -1,11 +1,10 @@
 package models
 
 type Exercise struct {
-	ID                   int     `json:"-"`
-	Name                 string  `json:"name"`
-	DictionaryExerciseID *int    `json:"-"`
-	CustomExerciseID     *int    `json:"-"`
+	ID                   int     `json:"id"`
+	SessionID            int     `json:"session_id"`
+	DictionaryExerciseID *int    `json:"dictionary_exercise_id,omitempty"`
+	CustomExerciseID     *int    `json:"custom_exercise_id,omitempty"`
 	Variation            *string `json:"variation,omitempty"`
 	Notes                *string `json:"notes,omitempty"`
-	Sets                 []Set   `json:"sets"`
 }

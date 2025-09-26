@@ -48,7 +48,8 @@ func (h *SessionHandler) GetSessions(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(sessions)
 }
 
-type CreateSessionRequest struct {
+// Request type for both POST and PUT session
+type SessionRequest struct {
 	SessionDate models.Date `json:"session_date"`
 	SessionType string      `json:"session_type"`
 	Notes       string      `json:"notes"`
@@ -57,7 +58,7 @@ type CreateSessionRequest struct {
 func (h *SessionHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	userID := getUserID(r)
 
-	var req CreateSessionRequest
+	var req SessionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		fmt.Println(err)
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -81,17 +82,11 @@ func (h *SessionHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]int{"id": id})
 }
 
-type UpdateSessionRequest struct {
-	SessionDate models.Date `json:"session_date"`
-	SessionType string      `json:"session_type"`
-	Notes       string      `json:"notes"`
-}
-
 func (h *SessionHandler) UpdateSession(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, _ := strconv.Atoi(idStr)
 
-	var req UpdateSessionRequest
+	var req SessionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		fmt.Println(err)
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
