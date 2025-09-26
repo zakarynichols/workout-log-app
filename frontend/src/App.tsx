@@ -4,15 +4,10 @@ function App() {
   const [response, setResponse] = useState("")
   const [error, setError] = useState<string | null>(null)
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL
+  const backendUrl = "/api"
 
   useEffect(() => {
-    if (!backendUrl) {
-      setError("Backend URL is not defined")
-      return
-    }
-    
-    fetch(backendUrl)
+    fetch(`${backendUrl}/sessions`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.text();

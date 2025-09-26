@@ -5,8 +5,9 @@ FROM node:22.18.0-alpine AS build
 
 WORKDIR /app
 
-ARG VITE_BACKEND_URL
-ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+# Shouldn't need to pass env arg with nginx.
+# ARG VITE_BACKEND_URL
+# ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 
 # Copy dependency files and install dependencies
 COPY package.json package-lock.json* ./

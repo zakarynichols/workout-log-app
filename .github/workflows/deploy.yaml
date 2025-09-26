@@ -25,7 +25,6 @@ jobs:
 
       - name: Deploy to droplet via SSH
         env:
-          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} << EOF
@@ -53,8 +52,8 @@ jobs:
             echo "Stopping containers..."
             docker compose down
 
-            echo "Building containers with VITE_BACKEND_URL=$VITE_BACKEND_URL ..."
-            VITE_BACKEND_URL=$VITE_BACKEND_URL docker compose build
+            echo "Building containers..."
+            docker compose build
 
             echo "Running database migrations..."
             docker compose run --rm migrate \

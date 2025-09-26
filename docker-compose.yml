@@ -22,16 +22,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "8080:8080" # DEV ONLY: expose backend directly for curl testing. REMOVE in prod!
 
   frontend:
     build:
       context: ./frontend
-      args:
-        VITE_BACKEND_URL: ${VITE_BACKEND_URL}
-    environment:
-      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
       
   nginx:
     image: nginx:stable-alpine
