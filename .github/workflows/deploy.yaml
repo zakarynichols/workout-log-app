@@ -55,10 +55,7 @@ jobs:
             docker compose build
 
             echo "Running database migrations..."
-            docker compose run --rm migrate \
-              -path=/migrations \
-              -database "$DATABASE_URL?sslmode=disable" \
-              up
+            docker compose up migrate
 
             echo "Starting containers..."
             docker compose up -d db backend nginx
