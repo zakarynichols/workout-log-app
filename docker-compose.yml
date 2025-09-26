@@ -23,18 +23,12 @@ services:
       db:
         condition: service_healthy
 
-  frontend:
+  nginx:
     build:
       context: ./frontend
-      
-  nginx:
-    image: nginx:stable-alpine
     ports:
       - "${NGINX_PORT:-80}:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - frontend
       - backend
 
   migrate:
@@ -43,14 +37,11 @@ services:
       - .env
     volumes:
       - ./migrations:/migrations
-    # Command to use in prod:
     command: [
       "-path", "/migrations",
       "-database", "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable",
       "up"
     ]
-    # Local development
-    # entrypoint: ["migrate"]
     depends_on:
       db:
         condition: service_healthy

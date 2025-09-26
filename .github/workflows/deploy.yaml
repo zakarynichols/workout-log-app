@@ -30,7 +30,6 @@ jobs:
           ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} << EOF
             set -e
             echo "Checking app directory..."
-
             if [ -d ~/workout-log-app ]; then
               cd ~/workout-log-app
               if [ ! -d .git ]; then
@@ -62,9 +61,8 @@ jobs:
               up
 
             echo "Starting containers..."
-            docker compose up -d
+            docker compose up -d db backend nginx
 
             echo "Deployment complete. Containers status:"
             docker compose ps
           EOF
-
