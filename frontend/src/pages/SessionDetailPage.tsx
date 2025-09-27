@@ -15,7 +15,7 @@ export default function SessionDetails() {
   const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
-    fetch(`http://localhost:8081/api/sessions/${id}`)
+    fetch(`/api/sessions/${id}`)
       .then((res) => res.json())
       .then(setSession)
       .catch((err) => console.error("Error fetching session:", err));
