@@ -17,6 +17,19 @@ func NewSessionRepository(db *pgxpool.Pool) *SessionRepository {
 
 // --- DB Operations ---
 
+func (r *SessionRepository) GetSession(ctx context.Context, id int) (models.Session, error) {
+	var s models.Session
+	err := r.db.QueryRow(ctx, `
+        SELECT id, user_id, session_date, session_type, notes
+        FROM workout.sessions
+        WHERE id = $1
+    `, id).Scan(&s.ID, &s.UserID, &s.SessionDate, &s.SessionType, &s.Notes)
+	if err != nil {
+		return s, err
+	}
+	return s, nil
+}
+
 func (r *SessionRepository) GetSessions(ctx context.Context, userID int) ([]models.Session, error) {
 	rows, err := r.db.Query(ctx, `
         SELECT id, session_date, session_type, notes
@@ -50,13 +63,20 @@ func (r *SessionRepository) CreateSession(ctx context.Context, userID int, s mod
 	return id, err
 }
 
-func (r *SessionRepository) UpdateSession(ctx context.Context, id int, s models.Session) error {
-	_, err := r.db.Exec(ctx, `
+func (r *SessionRepository) UpdateSession(ctx context.Context, id int, s models.Session) (models.Session, error) {
+	row := r.db.QueryRow(ctx, `
         UPDATE workout.sessions
         SET session_date = $1, session_type = $2, notes = $3
         WHERE id = $4
+        RETURNING id, user_id, session_date, session_type, notes
     `, s.SessionDate, s.SessionType, s.Notes, id)
-	return err
+
+	var updated models.Session
+	if err := row.Scan(&updated.ID, &updated.UserID, &updated.SessionDate, &updated.SessionType, &updated.Notes); err != nil {
+		return models.Session{}, err
+	}
+
+	return updated, nil
 }
 
 func (r *SessionRepository) DeleteSession(ctx context.Context, id int) error {

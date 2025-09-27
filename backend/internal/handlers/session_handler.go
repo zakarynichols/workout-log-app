@@ -4,12 +4,14 @@ import (
 	"backend/internal/models"
 	"backend/internal/repository"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 )
 
 type Date struct {
@@ -33,6 +35,28 @@ type SessionHandler struct {
 
 func NewSessionHandler(repo *repository.SessionRepository) *SessionHandler {
 	return &SessionHandler{repo: repo}
+}
+
+func (h *SessionHandler) GetSession(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	session, err := h.repo.GetSession(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "Session not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(session)
 }
 
 func (h *SessionHandler) GetSessions(w http.ResponseWriter, r *http.Request) {
@@ -84,11 +108,14 @@ func (h *SessionHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
 
 func (h *SessionHandler) UpdateSession(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
-	id, _ := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
 
 	var req SessionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		fmt.Println(err)
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
@@ -100,12 +127,16 @@ func (h *SessionHandler) UpdateSession(w http.ResponseWriter, r *http.Request) {
 		Notes:       req.Notes,
 	}
 
-	if err := h.repo.UpdateSession(r.Context(), id, s); err != nil {
+	updated, err := h.repo.UpdateSession(r.Context(), id, s)
+	if err != nil {
 		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]any{"status": "updated", "id": id})
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(updated); err != nil {
+		http.Error(w, "Encoding error: "+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (h *SessionHandler) DeleteSession(w http.ResponseWriter, r *http.Request) {

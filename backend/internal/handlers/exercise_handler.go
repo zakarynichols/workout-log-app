@@ -3,6 +3,7 @@ package handlers
 import (
 	"backend/internal/models"
 	"backend/internal/repository"
+	"fmt"
 
 	"encoding/json"
 	"net/http"
@@ -36,9 +37,9 @@ func (h *ExerciseHandler) GetExercises(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(exercises)
 }
 
-// Create a new exercise in a session
 func (h *ExerciseHandler) CreateExercise(w http.ResponseWriter, r *http.Request) {
-	sessionID, _ := strconv.Atoi(chi.URLParam(r, "sessionID"))
+	sessionID, _ := strconv.Atoi(chi.URLParam(r, "id"))
+	userID := 1 // hard-coded for now until auth is wired
 
 	var ex models.Exercise
 	if err := json.NewDecoder(r.Body).Decode(&ex); err != nil {
@@ -46,16 +47,37 @@ func (h *ExerciseHandler) CreateExercise(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Normalize zero values
+	if ex.DictionaryExerciseID != nil && *ex.DictionaryExerciseID == 0 {
+		ex.DictionaryExerciseID = nil
+	}
+	if ex.CustomExerciseID != nil && *ex.CustomExerciseID == 0 {
+		ex.CustomExerciseID = nil
+	}
+
+	if ex.DictionaryExerciseID == nil && ex.CustomExerciseID == nil && ex.Name != nil {
+		customID, err := h.repo.LookupOrCreateCustomExercise(r.Context(), userID, *ex.Name)
+		if err != nil {
+			http.Error(w, "Failed to create custom exercise: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		ex.CustomExerciseID = &customID
+	}
+
+	// Insert
 	id, err := h.repo.CreateExercise(r.Context(), sessionID, ex)
 	if err != nil {
+		fmt.Printf("[CreateExercise] DB insert error. sessionID=%d, ex=%+v, err=%v\n", sessionID, ex, err)
 		http.Error(w, "DB insert error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	fmt.Printf("[CreateExercise] Success. New exercise ID=%d\n", id)
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]int{"id": id})
 }
 
-// Update exercise
 func (h *ExerciseHandler) UpdateExercise(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)

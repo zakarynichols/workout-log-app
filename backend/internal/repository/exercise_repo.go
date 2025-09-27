@@ -3,6 +3,7 @@ package repository
 import (
 	"backend/internal/models"
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -15,7 +16,6 @@ func NewExerciseRepository(db *pgxpool.Pool) *ExerciseRepository {
 	return &ExerciseRepository{db: db}
 }
 
-// Get all exercises for a session
 func (r *ExerciseRepository) GetExercises(ctx context.Context, sessionID int) ([]models.Exercise, error) {
 	rows, err := r.db.Query(ctx, `
         SELECT id, session_id, dictionary_exercise_id, custom_exercise_id, variation, notes
@@ -39,22 +39,25 @@ func (r *ExerciseRepository) GetExercises(ctx context.Context, sessionID int) ([
 	return exercises, rows.Err()
 }
 
-// Create exercise
 func (r *ExerciseRepository) CreateExercise(ctx context.Context, sessionID int, ex models.Exercise) (int, error) {
 	var id int
+	fmt.Printf("[Repo.CreateExercise] inserting sessionID=%d, dictID=%v, customID=%v, variation=%v, notes=%v\n",
+		sessionID, ex.DictionaryExerciseID, ex.CustomExerciseID, ex.Variation, ex.Notes)
+
 	err := r.db.QueryRow(ctx, `
         INSERT INTO workout.exercises (session_id, dictionary_exercise_id, custom_exercise_id, variation, notes)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id`,
 		sessionID, ex.DictionaryExerciseID, ex.CustomExerciseID, ex.Variation, ex.Notes,
 	).Scan(&id)
+
 	if err != nil {
+		fmt.Printf("[Repo.CreateExercise] error: %v\n", err)
 		return 0, err
 	}
 	return id, nil
 }
 
-// Update exercise
 func (r *ExerciseRepository) UpdateExercise(ctx context.Context, id int, e models.Exercise) error {
 	_, err := r.db.Exec(ctx, `
         UPDATE workout.exercises
@@ -67,8 +70,18 @@ func (r *ExerciseRepository) UpdateExercise(ctx context.Context, id int, e model
 	return err
 }
 
-// Delete exercise
 func (r *ExerciseRepository) DeleteExercise(ctx context.Context, id int) error {
 	_, err := r.db.Exec(ctx, `DELETE FROM workout.exercises WHERE id = $1`, id)
 	return err
+}
+
+func (r *ExerciseRepository) LookupOrCreateCustomExercise(ctx context.Context, userID int, name string) (int, error) {
+	var id int
+	err := r.db.QueryRow(ctx, `
+        INSERT INTO workout.custom_exercises (user_id, name)
+        VALUES ($1, $2)
+        ON CONFLICT (user_id, name) DO UPDATE SET name = EXCLUDED.name
+        RETURNING id
+    `, userID, name).Scan(&id)
+	return id, err
 }

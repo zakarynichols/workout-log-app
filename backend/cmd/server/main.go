@@ -60,7 +60,8 @@ func main() {
 			r.Post("/", sessionHandler.CreateSession)
 
 			// Single session
-			r.Route("/{sessionID}", func(r chi.Router) {
+			r.Route("/{id}", func(r chi.Router) {
+				r.Get("/", sessionHandler.GetSession)
 				r.Put("/", sessionHandler.UpdateSession)
 				r.Delete("/", sessionHandler.DeleteSession)
 
@@ -71,7 +72,7 @@ func main() {
 		})
 
 		// Single exercise (not tied to session list)
-		r.Route("/exercises/{exerciseID}", func(r chi.Router) {
+		r.Route("/exercises/{id}", func(r chi.Router) {
 			r.Put("/", exerciseHandler.UpdateExercise)
 			r.Delete("/", exerciseHandler.DeleteExercise)
 
@@ -81,7 +82,7 @@ func main() {
 		})
 
 		// Single set
-		r.Route("/sets/{setID}", func(r chi.Router) {
+		r.Route("/sets/{id}", func(r chi.Router) {
 			r.Put("/", setHandler.UpdateSet)
 			r.Delete("/", setHandler.DeleteSet)
 		})
