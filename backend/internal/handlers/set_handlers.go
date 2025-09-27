@@ -19,7 +19,7 @@ func NewSetHandler(repo *repository.SetRepository) *SetHandler {
 }
 
 func (h *SetHandler) GetSets(w http.ResponseWriter, r *http.Request) {
-	exerciseID, _ := strconv.Atoi(chi.URLParam(r, "exerciseID"))
+	exerciseID, _ := strconv.Atoi(chi.URLParam(r, "id"))
 	sets, err := h.repo.GetSetsByExercise(r.Context(), exerciseID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -29,7 +29,7 @@ func (h *SetHandler) GetSets(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *SetHandler) CreateSet(w http.ResponseWriter, r *http.Request) {
-	exerciseID, _ := strconv.Atoi(chi.URLParam(r, "exerciseID"))
+	exerciseID, _ := strconv.Atoi(chi.URLParam(r, "id"))
 	var s models.Set
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
