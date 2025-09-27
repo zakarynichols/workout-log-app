@@ -22,7 +22,7 @@ export default function ExerciseForm({ sessionId }: { sessionId: number }) {
       payload.name = customName; // you’ll need a backend route to insert custom_exercises first
     }
 
-    await fetch(`http://localhost:8081/api/sessions/${sessionId}/exercises`, {
+    await fetch(`/api/sessions/${sessionId}/exercises`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

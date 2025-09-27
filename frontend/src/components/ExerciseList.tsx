@@ -10,7 +10,7 @@ export default function ExerciseList({ sessionId }: { sessionId: number }) {
   const [exercises, setExercises] = useState<Exercise[]>([]);
 
   useEffect(() => {
-    fetch(`http://localhost:8081/api/sessions/${sessionId}/exercises`)
+    fetch(`/api/sessions/${sessionId}/exercises`)
       .then((res) => res.json())
       .then(setExercises)
       .catch((err) => console.error("Error fetching exercises:", err));
