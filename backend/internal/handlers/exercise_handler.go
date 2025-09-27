@@ -22,7 +22,7 @@ func NewExerciseHandler(repo *repository.ExerciseRepository) *ExerciseHandler {
 
 // List exercises for a session
 func (h *ExerciseHandler) GetExercises(w http.ResponseWriter, r *http.Request) {
-	sessionID, _ := strconv.Atoi(chi.URLParam(r, "sessionID"))
+	sessionID, _ := strconv.Atoi(chi.URLParam(r, "id"))
 	exercises, err := h.repo.GetExercises(r.Context(), sessionID)
 	if err != nil {
 		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
