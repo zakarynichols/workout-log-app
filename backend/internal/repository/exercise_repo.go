@@ -75,6 +75,7 @@ func (r *ExerciseRepository) DeleteExercise(ctx context.Context, id int) error {
 	return err
 }
 
+// Can this return the name?
 func (r *ExerciseRepository) LookupOrCreateCustomExercise(ctx context.Context, userID int, name string) (int, error) {
 	var id int
 	err := r.db.QueryRow(ctx, `
@@ -84,4 +85,16 @@ func (r *ExerciseRepository) LookupOrCreateCustomExercise(ctx context.Context, u
         RETURNING id
     `, userID, name).Scan(&id)
 	return id, err
+}
+
+func (r *ExerciseRepository) GetDictionaryExerciseName(ctx context.Context, id int) (string, error) {
+	var name string
+	err := r.db.QueryRow(ctx, `SELECT name FROM workout.dictionary_exercises WHERE id = $1`, id).Scan(&name)
+	return name, err
+}
+
+func (r *ExerciseRepository) GetCustomExerciseName(ctx context.Context, id int) (string, error) {
+	var name string
+	err := r.db.QueryRow(ctx, `SELECT name FROM workout.custom_exercises WHERE id = $1`, id).Scan(&name)
+	return name, err
 }

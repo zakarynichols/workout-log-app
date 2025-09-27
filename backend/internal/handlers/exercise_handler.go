@@ -3,7 +3,6 @@ package handlers
 import (
 	"backend/internal/models"
 	"backend/internal/repository"
-	"fmt"
 
 	"encoding/json"
 	"net/http"
@@ -55,6 +54,7 @@ func (h *ExerciseHandler) CreateExercise(w http.ResponseWriter, r *http.Request)
 		ex.CustomExerciseID = nil
 	}
 
+	// Handle custom exercise
 	if ex.DictionaryExerciseID == nil && ex.CustomExerciseID == nil && ex.Name != nil {
 		customID, err := h.repo.LookupOrCreateCustomExercise(r.Context(), userID, *ex.Name)
 		if err != nil {
@@ -64,18 +64,33 @@ func (h *ExerciseHandler) CreateExercise(w http.ResponseWriter, r *http.Request)
 		ex.CustomExerciseID = &customID
 	}
 
-	// Insert
+	// Insert exercise
 	id, err := h.repo.CreateExercise(r.Context(), sessionID, ex)
 	if err != nil {
-		fmt.Printf("[CreateExercise] DB insert error. sessionID=%d, ex=%+v, err=%v\n", sessionID, ex, err)
 		http.Error(w, "DB insert error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	ex.ID = id
 
-	fmt.Printf("[CreateExercise] Success. New exercise ID=%d\n", id)
+	// Attach Name if missing
+	if ex.Name == nil {
+		if ex.DictionaryExerciseID != nil {
+			// Lookup dictionary exercise name
+			name, err := h.repo.GetDictionaryExerciseName(r.Context(), *ex.DictionaryExerciseID)
+			if err == nil {
+				ex.Name = &name
+			}
+		} else if ex.CustomExerciseID != nil {
+			// Lookup custom exercise name
+			name, err := h.repo.GetCustomExerciseName(r.Context(), *ex.CustomExerciseID)
+			if err == nil {
+				ex.Name = &name
+			}
+		}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]int{"id": id})
+	json.NewEncoder(w).Encode(ex)
 }
 
 func (h *ExerciseHandler) UpdateExercise(w http.ResponseWriter, r *http.Request) {
