@@ -1,10 +1,19 @@
 import { useState } from "react";
 
+interface WorkoutSet {
+  id: number;
+  exercise_id: number;
+  weight: number;
+  reps: number;
+  notes?: string;
+}
+
 interface Exercise {
   id: number;
   name: string;
   notes?: string;
   variation?: string;
+  sets: WorkoutSet[]
 }
 
 export default function ExerciseForm({

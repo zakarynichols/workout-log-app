@@ -15,6 +15,15 @@ interface Exercise {
   name: string;
   notes?: string;
   variation?: string;
+  sets: WorkoutSet[]
+}
+
+interface WorkoutSet {
+  id: number;
+  exercise_id: number;
+  weight: number;
+  reps: number;
+  notes?: string;
 }
 
 export default function SessionDetails() {
@@ -45,22 +54,21 @@ export default function SessionDetails() {
     setExercises((prev) => [...prev, exercise]); // instant update
   };
 
-  return (
-    <div className="p-6 space-y-6">
-      <div className="bg-white rounded-2xl shadow p-4">
-        <h1 className="text-xl font-bold">
-          {session.session_type} —{" "}
-          {new Date(session.session_date).toDateString()}
-        </h1>
-        <p className="text-gray-600">{session.notes}</p>
-      </div>
-
-      <ExerciseList exercises={exercises} />
-
-      <div className="bg-white rounded-2xl shadow p-4">
-        <h2 className="text-lg font-semibold mb-2">Add Exercise</h2>
-        <ExerciseForm sessionId={session.id} onAdded={handleExerciseAdded} />
-      </div>
-    </div>
+const handleSetAdded = (exerciseId: number, set: WorkoutSet) => {
+  setExercises((prev) =>
+    prev.map((ex) =>
+      ex.id === exerciseId
+        ? { ...ex, sets: [...(ex.sets || []), set] }
+        : ex
+    )
   );
+};
+
+return (
+  <div className="p-6 space-y-6">
+    {/* session card */}
+    <ExerciseList exercises={exercises} onSetAdded={handleSetAdded} />
+    <ExerciseForm sessionId={session.id} onAdded={handleExerciseAdded} />
+  </div>
+);
 }
