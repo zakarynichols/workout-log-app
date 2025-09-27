@@ -1,6 +1,19 @@
 import { useState } from "react";
 
-export default function ExerciseForm({ sessionId }: { sessionId: number }) {
+interface Exercise {
+  id: number;
+  name: string;
+  notes?: string;
+  variation?: string;
+}
+
+export default function ExerciseForm({
+  sessionId,
+  onAdded,
+}: {
+  sessionId: number;
+  onAdded: (exercise: Exercise) => void;
+}) {
   const [mode, setMode] = useState<"dictionary" | "custom">("dictionary");
   const [dictionaryId, setDictionaryId] = useState("");
   const [customName, setCustomName] = useState("");
@@ -16,17 +29,27 @@ export default function ExerciseForm({ sessionId }: { sessionId: number }) {
     };
 
     if (mode === "dictionary") {
-      payload.dictionary_exercise_id = dictionaryId ? Number(dictionaryId) : null;
+      payload.dictionary_exercise_id = dictionaryId
+        ? Number(dictionaryId)
+        : null;
     } else {
-      payload.custom_exercise_id = customName ? 0 : null; 
-      payload.name = customName; // you’ll need a backend route to insert custom_exercises first
+      payload.custom_exercise_id = customName ? 0 : null;
+      payload.name = customName;
     }
 
-    await fetch(`/api/sessions/${sessionId}/exercises`, {
+    const res = await fetch(`/api/sessions/${sessionId}/exercises`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+
+    if (!res.ok) {
+      console.error("Failed to add exercise");
+      return;
+    }
+
+    const created = await res.json();
+    onAdded(created); // push into SessionDetails state
 
     // reset
     setDictionaryId("");
@@ -36,7 +59,7 @@ export default function ExerciseForm({ sessionId }: { sessionId: number }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 border p-4 rounded-md">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <div className="flex gap-4">
         <label>
           <input
@@ -66,7 +89,7 @@ export default function ExerciseForm({ sessionId }: { sessionId: number }) {
           required
         >
           <option value="">Select exercise</option>
-          {/* TODO: populate with dictionary_exercises from API */}
+          {/* TODO: fetch from API instead of hardcoding */}
           <option value="1">Bench Press</option>
           <option value="2">Deadlift</option>
         </select>
