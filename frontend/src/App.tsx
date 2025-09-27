@@ -17,7 +17,7 @@ function App() {
       .then((text) => {
         try {
           const json = JSON.parse(text);
-          setSessionResponse(JSON.stringify(json, null, 2));
+          setSessionResponse(JSON.stringify(json));
         } catch (e) {
           setError("Response is not valid JSON");
           console.error("JSON parse error:", e);
@@ -35,7 +35,7 @@ function App() {
       .then((text) => {
         try {
           const json = JSON.parse(text);
-          setHealthResponse(JSON.stringify(json, null, 2));
+          setHealthResponse(JSON.stringify(json));
         } catch (e) {
           setError("Response is not valid JSON");
           console.error("JSON parse error:", e);
