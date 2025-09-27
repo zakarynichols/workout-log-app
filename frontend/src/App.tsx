@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import Sessions from "./pages/Sessions";
 import SessionDetails from "./pages/SessionDetailPage";
@@ -6,6 +6,10 @@ import SessionDetails from "./pages/SessionDetailPage";
 export default function App() {
   return (
     <Router>
+        <nav>
+        <Link to="/">Home</Link>
+        <Link to="/sessions">Sessions</Link>
+      </nav>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/sessions" element={<Sessions />} />
