@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 
 function App() {
-  const [response, setResponse] = useState("")
+  const [sessionResponse, setSessionResponse] = useState("")
+  const [healthResponse, setHealthResponse] = useState("")
+
   const [error, setError] = useState<string | null>(null)
 
   const backendUrl = "/api"
@@ -15,7 +17,25 @@ function App() {
       .then((text) => {
         try {
           const json = JSON.parse(text);
-          setResponse(JSON.stringify(json, null, 2));
+          setSessionResponse(JSON.stringify(json, null, 2));
+        } catch (e) {
+          setError("Response is not valid JSON");
+          console.error("JSON parse error:", e);
+        }
+      })
+      .catch((err) => {
+        setError(err.message);
+      });
+
+          fetch(`${backendUrl}/health`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.text();
+      })
+      .then((text) => {
+        try {
+          const json = JSON.parse(text);
+          setHealthResponse(JSON.stringify(json, null, 2));
         } catch (e) {
           setError("Response is not valid JSON");
           console.error("JSON parse error:", e);
@@ -32,7 +52,11 @@ function App() {
       {error ? (
         <p style={{ color: "red" }}>Error: {error}</p>
       ) : (
-        <pre>Server response: {response}</pre>
+        <div>
+          <p>{healthResponse}</p>
+          <br/>
+          <p>{sessionResponse}</p>
+        </div>
       )}
     </div>
   )
